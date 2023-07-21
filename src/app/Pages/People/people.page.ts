@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { PeopleInterface } from 'src/app/Models/people';
 import { PeopleService } from 'src/app/services/people.services';
-import { FormGroup, FormControl } from '@angular/forms';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-people',
@@ -13,9 +13,9 @@ export class PeoplePage implements OnInit {
 
   peopleForm = new FormGroup({
     id: new FormControl(0),
-    name: new FormControl(''),
-    lastName: new FormControl(''),
-    age: new FormControl(0),
+    name: new FormControl('', Validators.required),
+    lastName: new FormControl('', Validators.required),
+    age: new FormControl(0, Validators.required),
   });
 
   constructor(public peopleService: PeopleService) {}
@@ -35,26 +35,30 @@ export class PeoplePage implements OnInit {
     );
 
   onSave = () => {
-    this.peopleForm.value.id === 0
-      ? this.peopleService
-          .post({
-            ...this.peopleForm.value,
-            id: this.people.length + 1,
-          })
-          .subscribe(
+    if (this.peopleForm.valid) {
+      this.peopleForm.value.id === 0
+        ? this.peopleService
+            .post({
+              ...this.peopleForm.value,
+              id: this.people.length + 1,
+            })
+            .subscribe(
+              (data) => {
+                this.getPeople();
+                this.cleanForm();
+              },
+              (error) => console.log(error)
+            )
+        : this.peopleService.put(this.peopleForm.value).subscribe(
             (data) => {
               this.getPeople();
               this.cleanForm();
             },
             (error) => console.log(error)
-          )
-      : this.peopleService.put(this.peopleForm.value).subscribe(
-          (data) => {
-            this.getPeople();
-            this.cleanForm();
-          },
-          (error) => console.log(error)
-        );
+          );
+    } else {
+      console.log('Formulario no Valido');
+    }
   };
 
   onEdit = (item: any) => {
@@ -63,7 +67,10 @@ export class PeoplePage implements OnInit {
 
   onDelete = (item: any) => {
     this.peopleService.delete(item.id).subscribe(
-      (result) => {this.getPeople(); this.cleanForm();},
+      (result) => {
+        this.getPeople();
+        this.cleanForm();
+      },
       (error) => console.log(error)
     );
   };
